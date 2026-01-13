@@ -20,8 +20,8 @@ from pipeline.steps import (
 
 # Define the sequence of pipeline steps
 PIPELINE_STEPS = [
-    ("Generating Scenarios", generate_scenarios.run),
     ("PII Masking", pii_scan.run),
+    ("Generating Scenarios", generate_scenarios.run),
     ("Generating Test Cases", generate_testcases.run),
     ("Parsing Generated Test Cases", parse_json.run), # Moved parse_json here
     ("Generating Autotests", generate_autotests.run),

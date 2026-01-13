@@ -3,12 +3,17 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 import os
 import tempfile
 import json # Import json for serialization
+import time # Import time for sleep in retry logic
 from pipeline.runner import initialize_pipeline, PIPELINE_STEPS
 from storage.minio_client import upload, upload_json, download_json # Import new functions
 from logs.logger import log_error
+from collections import defaultdict # For retry counts
 
 # Map chat_id to run_id for ongoing pipelines
 pipeline_runs = {}
+# Store retry attempts for each step
+step_retry_counts = defaultdict(lambda: defaultdict(int))
+
 
 MINIO_CONTEXT_BUCKET = os.getenv("MINIO_BUCKET", "qa-pipeline")
 MINIO_CONTEXT_PREFIX = "contexts" # Prefix for storing context files in MinIO
@@ -50,7 +55,7 @@ def _delete_context_from_minio(run_id: str):
         log_error(f"Failed to delete context for run_id {run_id} from MinIO: {e}")
 
 
-def get_main_keyboard(ctx):
+def get_main_keyboard(ctx, is_retry_available=False):
     """Creates the main inline keyboard with the current step status."""
     step_index = ctx.get("step_index", 0)
     run_id = ctx.get("run_id")
@@ -58,9 +63,14 @@ def get_main_keyboard(ctx):
 
     if step_index < len(PIPELINE_STEPS):
         step_name, _ = PIPELINE_STEPS[step_index]
-        buttons.append(
-            [InlineKeyboardButton(f"▶️ Run: {step_name}", callback_data=f"run_step_{run_id}")]
-        )
+        if is_retry_available:
+            buttons.append(
+                [InlineKeyboardButton(f"🔁 Retry: {step_name}", callback_data=f"retry_step_{run_id}")]
+            )
+        else:
+            buttons.append(
+                [InlineKeyboardButton(f"▶️ Run: {step_name}", callback_data=f"run_step_{run_id}")]
+            )
         buttons.append(
             [InlineKeyboardButton("❌ Cancel", callback_data=f"cancel_pipeline_{run_id}")]
         )
@@ -134,7 +144,7 @@ async def run_next_step(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pipeline_runs[chat_id] = run_id # Ensure pipeline_runs is updated
     except Exception as e:
         log_error(f"Failed to load context for run_id {run_id}: {e}")
-        await query.edit_message_text(text="Pipeline state not found or corrupted. Please upload a file again.")
+        await context.bot.send_message(chat_id=chat_id, text="Pipeline state not found or corrupted. Please upload a file again.")
         if chat_id in pipeline_runs:
             del pipeline_runs[chat_id]
         return
@@ -142,40 +152,60 @@ async def run_next_step(update: Update, context: ContextTypes.DEFAULT_TYPE):
     step_index = ctx.get("step_index", 0)
 
     if step_index >= len(PIPELINE_STEPS):
-        await query.edit_message_text(text="Pipeline already completed.")
+        await context.bot.send_message(chat_id=chat_id, text="Pipeline already completed.")
         del pipeline_runs[chat_id] # Clean up state
         _delete_context_from_minio(run_id)
         return
 
-    try:
-        step_name, step_function = PIPELINE_STEPS[step_index]
+    step_name, step_function = PIPELINE_STEPS[step_index]
+    
+    retries = 3
+    current_retry = step_retry_counts[chat_id][step_name]
+    delay = 1 * (2 ** current_retry) # Exponential backoff starting from 1 sec
+
+    if query.data.startswith("retry_step_"):
+        await context.bot.send_message(chat_id=chat_id, text=f"Retrying step: *{step_name}* (Attempt {current_retry + 1}/{retries})...", parse_mode='Markdown')
+    else:
         await context.bot.send_message(chat_id=chat_id, text=f"Running step: *{step_name}*...", parse_mode='Markdown')
-        
+
+    try:
         step_function(ctx) # This is a synchronous call
         
         ctx["step_index"] += 1
         _save_context_to_minio(ctx) # Persist updated context
+        step_retry_counts[chat_id][step_name] = 0 # Reset retry count on success
+
+        next_keyboard = get_main_keyboard(ctx)
+        
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=f"✅ Step *{step_name}* completed.",
+            reply_markup=next_keyboard,
+            parse_mode='Markdown'
+        )
 
         # Automated file sending after each step (if applicable)
         await _send_step_artifacts_if_available(update, context, ctx, step_name)
 
-        next_keyboard = get_main_keyboard(ctx)
-        
-        if ctx["step_index"] < len(PIPELINE_STEPS):
-            await context.bot.send_message(
-                chat_id=chat_id,
-                text=f"✅ Step *{step_name}* completed.\nReady for the next step.",
-                reply_markup=next_keyboard,
-                parse_mode='Markdown'
-            )
-        else:
-            await context.bot.send_message(chat_id=chat_id, text="🎉 Pipeline finished successfully!", reply_markup=next_keyboard)
-
     except Exception as e:
-        log_error(f"An error occurred during step {step_name} for chat {chat_id}, run_id {run_id}: {e}")
-        await context.bot.send_message(chat_id=chat_id, text=f"An error occurred during step *{step_name}*:\n`{e}`", parse_mode='Markdown')
-        del pipeline_runs[chat_id] # Clean up state on error
-        _delete_context_from_minio(run_id)
+        error_message = str(e)
+        if "503 UNAVAILABLE" in error_message and current_retry < retries - 1:
+            step_retry_counts[chat_id][step_name] += 1
+            log_error(f"LLM call failed (503 UNAVAILABLE) for run_id {run_id}, step {step_name}. Retrying in {delay} seconds. Attempt {step_retry_counts[chat_id][step_name]}/{retries}")
+            await context.bot.send_message(chat_id=chat_id, text=f"⚠️ LLM service temporarily unavailable for *{step_name}*. Retrying in {delay} seconds...", parse_mode='Markdown')
+            time.sleep(delay)
+            # Re-queue the step for retry by creating a new callback_query and handling it.
+            # This is a bit tricky with how telegram-bot works with async.
+            # For simplicity, we'll offer a retry button.
+            retry_keyboard = get_main_keyboard(ctx, is_retry_available=True)
+            await context.bot.send_message(chat_id=chat_id, text=f"Failed to complete *{step_name}* after internal retries. Please try again.", reply_markup=retry_keyboard, parse_mode='Markdown')
+        else:
+            log_error(f"An error occurred during step {step_name} for chat {chat_id}, run_id {run_id}: {e}")
+            await context.bot.send_message(chat_id=chat_id, text=f"An error occurred during step *{step_name}*:\n`{e}`", parse_mode='Markdown')
+            del pipeline_runs[chat_id] # Clean up state on error
+            _delete_context_from_minio(run_id)
+            if chat_id in step_retry_counts and step_name in step_retry_counts[chat_id]:
+                del step_retry_counts[chat_id][step_name]
 
 
 async def _send_step_artifacts_if_available(update: Update, context: ContextTypes.DEFAULT_TYPE, ctx: dict, step_name: str):
@@ -202,21 +232,22 @@ async def _send_step_artifacts_if_available(update: Update, context: ContextType
     if sent_count > 0:
         await context.bot.send_message(chat_id=chat_id, text=f"Finished sending {sent_count} artifact(s) for *{step_name}*.", parse_mode='Markdown')
 
+
 async def _send_content_as_file_from_minio(context: ContextTypes.DEFAULT_TYPE, chat_id: int, run_id: str, filename: str, caption: str, content: str):
     """Helper to send string content as a file to the user from MinIO artifacts."""
     minio_path = f"{run_id}/{filename}"
     tmp_file_path = ""
     try:
-        # Assuming content is already available in ctx for now, but in future this might download from MinIO artifact path
+        # Also upload to Minio for history (if not already done by upload_artifacts.run)
+        upload(MINIO_CONTEXT_BUCKET, minio_path, content.encode('utf-8'))
+
         with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix=f"_{filename}") as tmp:
             tmp.write(content.encode('utf-8'))
             tmp_file_path = tmp.name
         
         with open(tmp_file_path, 'rb') as f:
             await context.bot.send_document(chat_id=chat_id, document=f, caption=caption)
-        
-        # Also upload to MinIO for history (if not already done by upload_artifacts.run)
-        upload(MINIO_CONTEXT_BUCKET, minio_path, content.encode('utf-8'))
+
     except Exception as e:
         log_error(f"Failed to send and/or upload content artifact {filename} for run_id {run_id}: {e}")
         await context.bot.send_message(chat_id=chat_id, text=f"⚠️ Could not send artifact: {filename}")
@@ -232,9 +263,6 @@ async def send_artifacts(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    # Extract run_id from callback_data (if this function were to be called by a button)
-    # run_id = query.data.split('_')[-1] if '_' in query.data else None
-    # Assuming run_id is in pipeline_runs for now if this is manually triggered
     run_id = pipeline_runs.get(chat_id)
 
     if not run_id:
@@ -248,14 +276,7 @@ async def send_artifacts(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=chat_id, text="Error loading pipeline state. Please upload a file again.")
         return
 
-    # Call the existing upload_artifacts.run (which saves to MinIO)
-    # and then send from MinIO, or directly send from ctx.
-    # For now, we assume _send_step_artifacts_if_available handles sending.
-    # This method could be used to gather ALL artifacts at once.
     await context.bot.send_message(chat_id=chat_id, text="All artifacts are sent automatically after each relevant step now.")
-
-    # Re-evaluate if this function is still needed, or how it should work with automated sending.
-    # For now, it will just inform the user.
 
 
 async def cancel_pipeline(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -268,6 +289,8 @@ async def cancel_pipeline(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if chat_id in pipeline_runs and pipeline_runs[chat_id] == run_id:
         del pipeline_runs[chat_id]
+        if chat_id in step_retry_counts:
+            del step_retry_counts[chat_id]
         _delete_context_from_minio(run_id)
         await query.edit_message_text(text="Pipeline cancelled.")
     else:
@@ -284,6 +307,8 @@ async def close_pipeline(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if chat_id in pipeline_runs and pipeline_runs[chat_id] == run_id:
         del pipeline_runs[chat_id]
+        if chat_id in step_retry_counts:
+            del step_retry_counts[chat_id]
         _delete_context_from_minio(run_id)
     await query.edit_message_text(text="Pipeline closed. You can now start a new one by uploading a file.")
 
@@ -301,7 +326,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data = query.data
     
-    if data.startswith("run_step_"):
+    if data.startswith("run_step_") or data.startswith("retry_step_"):
         await run_next_step(update, context)
     elif data.startswith("download_artifacts_"): # This case is largely deprecated now
         await send_artifacts(update, context)

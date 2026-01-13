@@ -12,6 +12,7 @@ CRITICAL
 - No explanations
 - JSON must start with { and end with }
 - No markdown
+- Ensure the JSON is valid and can be directly parsed.
 
 JSON FORMAT:
 {

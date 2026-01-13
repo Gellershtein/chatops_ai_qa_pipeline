@@ -5,7 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="dced666c-5d83-42e9-b208-5022d775e598" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.env.template" beforeDir="false" afterPath="$PROJECT_DIR$/.env.template" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bot/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/bot/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/llm/gemini_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/llm/gemini_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/llm/prompts/scenarios.py" beforeDir="false" afterPath="$PROJECT_DIR$/llm/prompts/scenarios.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/llm/prompts/testcases.py" beforeDir="false" afterPath="$PROJECT_DIR$/llm/prompts/testcases.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/runner.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/steps/generate_scenarios.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/steps/generate_scenarios.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pipeline/steps/generate_testcases.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/steps/generate_testcases.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/steps/pii_scan.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/steps/pii_scan.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,16 +32,16 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "/Users/sergei/Downloads/chatops_ai_qa_pipeline_v3",
-    "settings.editor.selected.configurable": "configurable.group.project"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/sergei/Downloads/chatops_ai_qa_pipeline_v3&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;configurable.group.project&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/examples" />
