@@ -12,17 +12,14 @@ from pipeline.steps import (
     ai_code_review,
     generate_qa_summary,
     generate_bug_report,
-    upload_artifacts,
     run_autotests
 )
-from pipeline.steps.garb import trigger_ci, get_test_results
 
 # Define the sequence of pipeline steps
 PIPELINE_STEPS = [
     ("PII Masking", pii_scan.run),
     ("Generating Scenarios", generate_scenarios.run),
     ("Generating Test Cases", generate_testcases.run),
-    #("Parsing Generated Test Cases", parse_json.run), # Moved parse_json here
     ("Generating Autotests", generate_autotests.run),
     ("Checking Code Quality", code_quality_check.run),
     ("Performing AI Code Review", ai_code_review.run),
