@@ -1,0 +1,36 @@
+
+version: "3.9"
+
+services:
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    networks:
+      - qa-net
+
+  app:
+    build: .
+    depends_on:
+      - minio
+    env_file:
+      - .env
+    environment:
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    volumes:
+      - .:/app
+    command: >
+      sh -c "python storage/minio_setup.py && python -m bot.main"
+    networks:
+      - qa-net
+
+networks:
+  qa-net:
+    driver: bridge

@@ -1,0 +1,6 @@
+google-genai
+minio
+python-telegram-bot==20.7
+flake8
+pytest
+python-dotenv

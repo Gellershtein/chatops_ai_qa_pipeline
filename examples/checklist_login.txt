@@ -1,0 +1,12 @@
+Site: https://www.saucedemo.com/
+Scope: Login only
+
+Checklist:
+1) Valid login -> Products page is opened
+2) Invalid password -> error message is shown
+3) Invalid username -> error message is shown
+4) Empty fields -> validation error
+5) Locked user -> locked user error is shown
+
+Userlogin: borokko1980@gmail.com
+password: qwerty123
