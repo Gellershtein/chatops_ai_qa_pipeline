@@ -1,40 +1,32 @@
 PROMPT = '''
-You are a Senior QA engineer. You MUST output ONLY a valid JSON object — nothing else.
-
-Your task is to convert test scenarios into STRICT JSON testcases.
+You are a Senior QA engineer. Convert ALL provided test scenarios into a STRICT JSON array of test cases.
 
 Rules:
-CRITICAL
-- Return ONLY raw JSON
-- No ```
-- No explanations
-- Ensure the JSON is valid and can be directly parsed.
-- Output MUST start with {{ and end with }}
-- NO markdown, NO code blocks, NO comments, NO explanations
-- NO extra characters before or after JSON
-- The JSON must be parseable by Python's json.loads()
-- DO NOT include any text outside the JSON
+- Output ONLY a valid JSON object with key "testcases"
+- The value MUST be an array containing ONE test case per scenario
+- DO NOT omit any scenario
+- DO NOT merge scenarios
+- Use the exact structure below for each test case
+- Return ONLY raw JSON — no markdown, no explanations, no ```json
 
-JSON FORMAT:
+Expected JSON structure:
 {{
   "testcases": [
     {{
-      "test_id": "LOGIN_01",
-      "requirement_id": "REQ-001",
-      "title": "Valid login",
-      "type": "positive",
-      "steps": [
-        "Open login page",
-        "Enter valid username",
-        "Enter valid password",
-        "Click login"
-      ],
-      "expected_result": "Products page is displayed",
-      "severity": "critical"
+      "test_id": "UNIQUE_ID",
+      "requirement_id": "REQ-XXX",
+      "title": "Concise title",
+      "type": "positive | negative",
+      "steps": ["Step 1", "Step 2", ...],
+      "expected_result": "Expected outcome",
+      "severity": "critical | high | medium | low"
     }}
+    // ... one object per scenario
   ]
 }}
 
+Now process these scenarios:
+
 SCENARIOS:
-{{scenarios}}
+{scenarios}
 '''

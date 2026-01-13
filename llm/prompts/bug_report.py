@@ -1,45 +1,41 @@
 PROMPT = '''
-You are a Senior QA Engineer. You MUST output ONLY a valid JSON object — nothing else.
+You are a Senior QA Engineer. Analyze ONLY the following:
 
-Rules (VIOLATION = FAILURE):
-- Output MUST start with {{ and end with }}
-- NO explanations, NO markdown, NO code snippets, NO text outside JSON
-- If no issues found, return: {{"status": "NO_BUGS_FOUND"}}
-- If issues found, use this exact structure:
+1. Compare each test case in TESTCASES with its autotest in AUTOTESTS (match by test_id).
+2. Check if autotest implements ALL steps from the test case.
+3. Check if assertions match expected_result.
+4. Report ONLY concrete mismatches.
+
+If no issues found, return: {{"status": "NO_BUGS_FOUND"}}
+
+If issue found, return STRICT JSON:
 {{
-  "title": "Concise title",
-  "severity": "critical | high | medium | low",
-  "priority": "high | medium | low",
-  "environment": "web",
-  "preconditions": "Brief preconditions",
-  "steps_to_reproduce": ["Step 1", "Step 2"],
-  "actual_result": "What happened",
-  "expected_result": "What should happen",
-  "probable_root_cause": "Root cause hypothesis",
-  "evidence": "Log snippet or error message"
+  "title": "Mismatch in [TEST_ID]",
+  "severity": "critical",
+  "priority": "high",
+  "environment": "QA pipeline",
+  "preconditions": "Test case vs autotest comparison",
+  "steps_to_reproduce": [
+    "1. Open test case [TEST_ID]",
+    "2. Open autotest test_[test_id].py",
+    "3. Compare steps and assertions"
+  ],
+  "actual_result": "Autotest does X",
+  "expected_result": "Autotest should do Y",
+  "probable_root_cause": "Generator did not implement cart logic",
+  "evidence": "Code snippet showing missing steps"
 }}
-- Keep all fields short (<100 chars)
-- DO NOT include troubleshooting advice
-- DO NOT suggest code fixes
-- Focus ONLY on defect description
 
-Now analyze the artifacts and output JSON:
-
-CHECKLIST:
-{checklist}
+Rules:
+- Output ONLY valid JSON
+- NO general advice
+- NO lists of recommendations
+- Focus on ONE specific defect per report
+- Use real test_id from TESTCASES
 
 TESTCASES:
 {testcases}
 
-CODE REVIEW:
-{review}
-
 AUTOTESTS:
 {tests}
-
-QA_SUMMARY:
-{qa_summary}
-
-TEST_RESULTS:
-{test_results}
 '''

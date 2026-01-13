@@ -75,23 +75,34 @@ def run(ctx):
             cwd="/app"
         )
 
-        # Сохраняем лог выполнения
+        # --- ДОБАВЛЯЕМ Run ID в начало отчётов ---
+        run_id_header = f"Run ID: {run_id}\n{'='*50}\n\n"
+
+        # Обновляем HTML-отчёт (если создан)
+        if os.path.exists(html_report):
+            with open(html_report, "r", encoding="utf-8") as f:
+                html_content = f.read()
+            with open(html_report, "w", encoding="utf-8") as f:
+                f.write(run_id_header + html_content)
+
+        # Создаём лог с Run ID в начале
+        log_content = (
+            run_id_header +
+            "=== STDOUT ===\n" + result.stdout +
+            "\n=== STDERR ===\n" + result.stderr +
+            f"\n=== EXIT CODE ===\n{result.returncode}\n"
+        )
         with open(log_file, "w", encoding="utf-8") as f:
-            f.write("=== STDOUT ===\n")
-            f.write(result.stdout)
-            f.write("\n=== STDERR ===\n")
-            f.write(result.stderr)
-            f.write(f"\n=== EXIT CODE ===\n{result.returncode}\n")
+            f.write(log_content)
 
         # Парсим XML (обязательно)
         summary = _parse_test_results(xml_report)
         ctx["test_summary"] = summary
 
-        # Сохраняем пути — даже если HTML не создан
+        # Сохраняем пути
         ctx["test_results_xml"] = xml_report
         ctx["test_run_log"] = log_file
 
-        # Проверяем, создан ли HTML
         if os.path.exists(html_report):
             ctx["test_report_html"] = html_report
         else:

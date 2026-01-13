@@ -5,25 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="dced666c-5d83-42e9-b208-5022d775e598" name="Changes" comment="init">
-      <change afterPath="$PROJECT_DIR$/pipeline/steps/run_autotests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bot/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/bot/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/checklist_login.txt" beforeDir="false" afterPath="$PROJECT_DIR$/examples/checklist_login.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/llm/prompts/bug_report.py" beforeDir="false" afterPath="$PROJECT_DIR$/llm/prompts/bug_report.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/llm/prompts/code_review.py" beforeDir="false" afterPath="$PROJECT_DIR$/llm/prompts/code_review.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/llm/prompts/qa_summary.py" beforeDir="false" afterPath="$PROJECT_DIR$/llm/prompts/qa_summary.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/llm/prompts/scenarios.py" beforeDir="false" afterPath="$PROJECT_DIR$/llm/prompts/scenarios.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/llm/prompts/testcases.py" beforeDir="false" afterPath="$PROJECT_DIR$/llm/prompts/testcases.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pipeline/runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/runner.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pipeline/steps/ai_code_review.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/steps/ai_code_review.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pipeline/steps/code_quality_check.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/steps/code_quality_check.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pipeline/steps/generate_autotests.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/steps/generate_autotests.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pipeline/steps/generate_bug_report.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/steps/generate_bug_report.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pipeline/steps/generate_qa_summary.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/steps/generate_qa_summary.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pipeline/steps/generate_testcases.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/steps/generate_testcases.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pipeline/steps/get_test_results.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/steps/garb/get_test_results.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pipeline/steps/trigger_ci.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/steps/garb/trigger_ci.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/steps/garb/get_test_results.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/steps/garb/trigger_ci.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/steps/parse_json.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/steps/run_autotests.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/steps/run_autotests.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -114,22 +104,19 @@
       <option name="project" value="LOCAL" />
       <updated>1768304409305</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="init">
+      <option name="closed" value="true" />
+      <created>1768325462508</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1768325462508</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="init" />
     <option name="LAST_COMMIT_MESSAGE" value="init" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/bot/main.py</url>
-          <line>138</line>
-          <option name="timeStamp" value="2" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>

@@ -8,5 +8,16 @@ Checklist:
 4) Empty fields -> validation error
 5) Locked user -> locked user error is shown
 
-Userlogin: borokko1980@gmail.com
+Userlogin: test_mail@gmail.com
 password: qwerty123
+
+Accepted usernames are:
+standard_user
+locked_out_user
+problem_user
+performance_glitch_user
+error_user
+visual_user
+
+Password for all users:
+secret_sauce
