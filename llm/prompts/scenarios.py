@@ -8,6 +8,7 @@ Rules:
 - Do not invent functionality.
 - Output only test scenarios
 - No markdown.
+- Human like format, Not BDD format
 - Clear structure
 
 Checklist:

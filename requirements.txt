@@ -1,6 +1,13 @@
 google-genai
 minio
-python-telegram-bot==20.7
+python-telegram-bot==22.5
 flake8
+ruff
+mypy
+types-requests
 pytest
+pytest-html
 python-dotenv
+selenium
+webdriver-manager
+xmltodict
