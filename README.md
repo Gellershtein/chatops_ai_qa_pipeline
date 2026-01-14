@@ -1,73 +1,138 @@
+# ChatOps AI QA Pipeline
 
-  
-    
-# ChatOps AI QA Pipeline      
- Этот проект представляет собой AI QA (pipeline) для контроля качества (QA) с использованием AI, управляемый через Telegram-бота (ChatOps). Он автоматизирует различные этапы процесса QA, начиная от анализа требований и заканчивая созданием отчетов об ошибках и итоговых отчетов.      
-      
-## Архитектура      
- Проект состоит из нескольких ключевых компонентов, работающих вместе в контейнерной среде, управляемой Docker Compose.      
-      
-1.  **Telegram Бот**: Основной интерфейс для взаимодействия с пользователем. Бот принимает файлы с требованиями, позволяет управлять его выполнением и получать артефакты.  
-2.  **AI Модель**: Проект поддерживает как облачные модели (по умолчанию `gemini-pro` через Google Gemini API), так и локальные модели (например, `codegemma:7b` через локальный LLM-сервер, такой как Ollama). Выбор модели и конфигурация осуществляется через переменные окружения `LLM_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_MODEL_NAME`, `LOCAL_MODEL_NAME`, `LOCAL_LLM_ENDPOINT`.3.  **AI QA (pipeline)**: Последовательность шагов для обработки требований и проведения QA. Каждый шаг выполняется как отдельный модуль.      
-4.  **Хранилище Артефактов (Minio)**: Используется для хранения как исходных файлов, так и всех сгенерированных в процессе работы артефактов.      
-5.  **Контейнеризация (Docker)**: Все компоненты системы (приложение и Minio) запускаются в изолированных Docker-контейнерах, что обеспечивает простоту развертывания и масштабируемость.      
-      
-## Модули Проект имеет модульную структуру, где каждый компонент отвечает за свою часть функциональности:      
-      
--   `bot/`: Содержит логику Telegram-бота (`main.py`), который обрабатывает команды пользователя и управляет состоянием AI QA пайплайна.      
--   `llm/`:      
-    -   `gemini_client.py`: Клиент для взаимодействия с API Gemini.      
-    -   `prompts/`: Модули с промптами для AI для каждого конкретного шага.      
--   `pipeline/`:      
-    -   `runner.py`: Определяет последовательность шагов AI QA пайплайна и инициализирует его запуск.      
-    -   `steps/`: Каждый файл в этой директории представляет собой отдельный шаг AI QA пайплайна (например, `generate_scenarios.py`, `ai_code_review.py`). **Примечание: Файлы `parse_json.py` и содержимое директории `garb/` в настоящее время не используются и могут быть удалены.**  
--   `storage/`: Содержит клиент для работы с объектным хранилищем Minio (`minio_client.py`). `minio_setup.py` используется для инициализации Minio.  
--   `models/`: Определяет структуры данных, используемые в проекте.      
--   `logs/`: Настройка логирования. 
--  `artifacts/`:
-	- `{RUN_ID}/`:  Индификатор запуска пайплайна.      
-		-   `autotests/`: Тесты для проекта, включая сгенерированные автотесты.      
-		-   `reports/`: Директория для сохранения отчетов.      
-      
-## Установка и Запуск      
- ### Предварительные требования      
-- Docker      
-- Docker Compose      
-- Git      
-      
-### Инструкция по установке      
- 1.  **Клонируйте репозиторий:**      
- ```bash git clone <URL вашего репозитория>  cd chatops_ai_qa_pipeline ```2.  **Создайте файл `.env`:**    
- Скопируйте `.env.template` в `.env`:    
-    ```bash cp .env.template .env ```    
- Заполните переменные в файле `.env`:    
-    -   `TELEGRAM_BOT_TOKEN`: Ваш токен для Telegram-бота.    
-    -   **Конфигурация LLM:**    
-        -   `LLM_PROVIDER`: Выберите `"cloud"` для использования Google Gemini API или `"local"` для локальной модели (например, Ollama). По умолчанию `"cloud"`.    
-     - Если `LLM_PROVIDER="cloud"`:    
-            -   `GEMINI_API_KEY`: Ваш API-ключ для Gemini. Получите его в Google AI Studio.    
-            -   `GEMINI_MODEL_NAME`: Название облачной модели Gemini (по умолчанию `gemini-pro`).    
-            -   `GEMINI_TEMPERATURE`: Температура модели для генерации ответов (по умолчанию `0.7`).    
-     - Если `LLM_PROVIDER="local"`:    
-            -   `LOCAL_MODEL_NAME`: Название вашей локальной модели (например, `codegemma:7b`).    
-            -   `LOCAL_LLM_ENDPOINT`: URL-адрес вашей локальной конечной точки LLM (например, `http://host.docker.internal:11434` для Ollama).    
-                *Примечание:* Если вы используете локальную модель, убедитесь, что ваш локальный LLM-сервер (например, Ollama) запущен и доступен.    
-    -   **Конфигурация Minio:**    
-        -   `MINIO_ENDPOINT`: Адрес Minio сервера.    
-        -   `MINIO_ACCESS_KEY`: Ключ доступа Minio.    
-        -   `MINIO_SECRET_KEY`: Секретный ключ Minio.    
-        *Примечание:* `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` и `MINIO_SECRET_KEY`, указанные в `.env`, будут **переопределены** значениями из `docker-compose.yml` для сервиса `app` при запуске через Docker Compose.    
-        -   `MINIO_BUCKET`: Название bucket в Minio (по умолчанию `qa-pipeline`).    
-        -   `MINIO_SECURE`: Установите `"true"` для HTTPS, `"false"` для HTTP (Minio обычно использует HTTP).  
- ```bash docker-compose up --build ``` Эта команда соберет Docker-образ для приложения, запустит контейнеры с приложением и Minio.      
-      
-### Использование      
- 1.  **Откройте Telegram и найдите вашего бота.** 2.  **Отправьте боту файл `.txt` или `.json` с требованиями.** Например, вы можете использовать файл из `examples/checklist_login.txt`.      
-3.  **Бот инициализирует пайплайн.** Вы увидите сообщение о начале работы и кнопки для управления.      
-4.  **Запускайте шаги AI QA (pipeline)**, нажимая на кнопку `▶️ Run: ...`.      
-5.  **Скачивайте артефакты**, нажимая на кнопку `📄 Download Artifacts`. Артефакты будут отправлены вам в чат.      
-6. После завершения всех шагов, вы можете закрыть AI QA (pipeline) или отменить его в любой момент.      
-      
-### Остановка      
- Для остановки всех сервисов, выполните:      
-```bash  docker-compose down```
+This project is an AI-powered QA pipeline managed via a Telegram bot (ChatOps). It automates various stages of the QA process, from analyzing requirements to generating bug reports and summary reports.
+
+## Architecture
+
+The project consists of several key components working together in a containerized environment managed by Docker Compose.
+
+```mermaid
+graph TD
+    subgraph User Interaction
+        A[User] -->|Sends requirements file| B(Telegram Bot);
+    end
+
+    subgraph AI QA Pipeline
+        B --> C{AI/LLM};
+        C --> D[Generate Scenarios];
+        D --> E[Generate Test Cases];
+        E --> F[Generate Autotests];
+        F --> G[Code Quality Check];
+        G --> H[AI Code Review];
+        H --> I[Run Autotests];
+        I --> J[PII Scan];
+        J --> K[Generate Bug Report];
+        K --> L[Generate QA Summary];
+    end
+
+    subgraph Storage
+        L --> M(Minio);
+    end
+
+    B --> M;
+```
+
+1.  **Telegram Bot**: The main interface for user interaction. The bot accepts requirement files, manages the pipeline's execution, and provides artifacts.
+2.  **AI/LLM**: The project supports both cloud-based models (defaulting to `gemini-pro` via the Google Gemini API) and local models (e.g., `codegemma:7b` via a local LLM server like Ollama). The model and configuration are selected through environment variables such as `LLM_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_MODEL_NAME`, `LOCAL_MODEL_NAME`, and `LOCAL_LLM_ENDPOINT`.
+3.  **AI QA Pipeline**: A sequence of steps for processing requirements and performing QA. Each step is executed as a separate module.
+4.  **Artifact Storage (Minio)**: Used for storing both the initial files and all artifacts generated during the process.
+5.  **Containerization (Docker)**: All system components (the application and Minio) run in isolated Docker containers, ensuring easy deployment and scalability.
+
+## Project Structure
+
+The project has a modular structure, with each component responsible for its functionality:
+
+-   `bot/`: Contains the logic for the Telegram bot (`main.py`), which handles user commands and manages the state of the AI QA pipeline.
+-   `llm/`:
+    -   `gemini_client.py`: A client for interacting with the Gemini API.
+    -   `prompts/`: Modules with prompts for the AI for each specific step.
+-   `pipeline/`:
+    -   `runner.py`: Defines the sequence of the AI QA pipeline steps and initializes its execution.
+    -   `steps/`: Each file in this directory represents a separate step in the AI QA pipeline (e.g., `generate_scenarios.py`, `ai_code_review.py`).
+-   `storage/`: Contains the client for working with the Minio object storage (`minio_client.py`). `minio_setup.py` is used for Minio initialization.
+-   `models/`: Defines the data structures used in the project.
+-   `logs/`: Configures logging.
+-   `artifacts/`:
+    -   `{RUN_ID}/`: A unique identifier for each pipeline run.
+        -   `autotests/`: Tests for the project, including generated autotests.
+        -   `reports/`: Directory for storing reports.
+
+## Getting Started
+
+### Prerequisites
+
+-   Docker
+-   Docker Compose
+-   Git
+
+### Installation
+
+1.  **Clone the repository:**
+    ```bash
+    git clone <your_repository_url>
+    cd chatops_ai_qa_pipeline
+    ```
+2.  **Create the `.env` file:**
+    Copy `.env.template` to `.env`:
+    ```bash
+    cp .env.template .env
+    ```
+    Fill in the variables in the `.env` file.
+
+## Configuration
+
+-   `TELEGRAM_BOT_TOKEN`: Your token for the Telegram bot.
+-   **LLM Configuration:**
+    -   `LLM_PROVIDER`: Choose `"cloud"` to use the Google Gemini API or `"local"` for a local model (e.g., Ollama). Defaults to `"cloud"`.
+    -   If `LLM_PROVIDER="cloud"`:
+        -   `GEMINI_API_KEY`: Your API key for Gemini. Get it from Google AI Studio.
+        -   `GEMINI_MODEL_NAME`: The name of the cloud-based Gemini model (default: `gemini-pro`).
+        -   `GEMINI_TEMPERATURE`: The model's temperature for generating responses (default: `0.7`).
+    -   If `LLM_PROVIDER="local"`:
+        -   `LOCAL_MODEL_NAME`: The name of your local model (e.g., `codegemma:7b`).
+        -   `LOCAL_LLM_ENDPOINT`: The URL of your local LLM endpoint (e.g., `http://host.docker.internal:11434` for Ollama).
+            *Note:* If you are using a local model, ensure your local LLM server (e.g., Ollama) is running and accessible.
+-   **Minio Configuration:**
+    -   `MINIO_ENDPOINT`: The address of the Minio server.
+    -   `MINIO_ACCESS_KEY`: The access key for Minio.
+    -   `MINIO_SECRET_KEY`: The secret key for Minio.
+    -   `MINIO_BUCKET`: The name of the bucket in Minio (default: `qa-pipeline`).
+    -   `MINIO_SECURE`: Set to `"true"` for HTTPS, `"false"` for HTTP (Minio typically uses HTTP).
+
+*Note:* The environment variables from the `.env` file are passed as build arguments to the `app` service during the Docker build process. This ensures that your credentials and other configurations are securely passed to the container.
+
+### Running the Application
+
+```bash
+docker-compose up --build
+```
+
+This command will build the Docker image for the application and start the containers for the application and Minio.
+
+## Usage
+
+1.  **Open Telegram and find your bot.**
+2.  **Send the bot a `.txt` or `.json` file with the requirements.** For example, you can use the file from `examples/checklist_login.txt`.
+3.  **The bot will initialize the pipeline.** You will see a message indicating the start of the process and buttons for control.
+4.  **Run the AI QA pipeline steps** by clicking the `▶️ Run: ...` button.
+5.  **Download artifacts** by clicking the `📄 Download Artifacts` button. The artifacts will be sent to you in the chat.
+6.  After all steps are completed, you can close the AI QA pipeline or cancel it at any time.
+
+### Stopping the Application
+
+To stop all services, run:
+```bash
+docker-compose down
+```
+
+## How to run tests
+
+To run the automated tests, you can use `pytest`. The tests are located in the `artifacts/{RUN_ID}/autotests/` directory.
+
+## Dependencies
+
+The Python dependencies for this project are listed in the `requirements.txt` file. You can install them using pip:
+
+```bash
+pip install -r requirements.txt
+```
