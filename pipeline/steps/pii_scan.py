@@ -1,11 +1,22 @@
-
-import re
-
-EMAIL = re.compile(r"[\w\.-]+@[\w\.-]+")
-PASSWORD = re.compile(r'(password|pass|pwd)\s*[:=]\s*[\'"]?(\S+)[\'"]?', re.IGNORECASE)
+from presidio_analyzer import AnalyzerEngine
+from presidio_anonymizer import AnonymizerEngine
 
 def run(ctx):
-    masked = ctx["txt"]
-    masked = EMAIL.sub("[EMAIL_MASKED]", masked)
-    masked = PASSWORD.sub(r'\1 [PASSWORD_MASKED]', masked)
-    ctx["masked_scenarios"] = masked
+    """
+    Scans the text for PII and anonymizes it.
+    """
+    analyzer = AnalyzerEngine()
+    anonymizer = AnonymizerEngine()
+
+    text_to_scan = ctx["txt"]
+
+    # Analyze the text for PII entities
+    analyzer_results = analyzer.analyze(text=text_to_scan, language='en')
+
+    # Anonymize the detected entities
+    anonymized_result = anonymizer.anonymize(
+        text=text_to_scan,
+        analyzer_results=analyzer_results
+    )
+
+    ctx["masked_scenarios"] = anonymized_result.text

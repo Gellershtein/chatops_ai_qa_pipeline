@@ -1,31 +1,32 @@
 import json
 from minio import Minio
-import os
+from minio.error import S3Error
 from io import BytesIO
-
-from minio import Minio
-import os
-from io import BytesIO
-
-secure_str = os.getenv("MINIO_SECURE", "false").lower()
-secure = secure_str == "true"
+from config import config
+from utils.exceptions import StorageError
 
 client = Minio(
-    os.getenv("MINIO_ENDPOINT"),
-    access_key=os.getenv("MINIO_ACCESS_KEY"),
-    secret_key=os.getenv("MINIO_SECRET_KEY"),
-    secure=secure
+    config.minio_endpoint,
+    access_key=config.minio_access_key,
+    secret_key=config.minio_secret_key,
+    secure=config.minio_secure
 )
 
-
 def upload(bucket, path, content: bytes):
-    if not client.bucket_exists(bucket):
-        client.make_bucket(bucket)
-    client.put_object(bucket, path, data=BytesIO(content), length=len(content))
+    try:
+        if not client.bucket_exists(bucket):
+            client.make_bucket(bucket)
+        client.put_object(bucket, path, data=BytesIO(content), length=len(content))
+    except S3Error as e:
+        raise StorageError(f"Failed to upload to Minio: {e}") from e
+
 
 def download(bucket, path):
-    response = client.get_object(bucket, path)
-    return response.read().decode()
+    try:
+        response = client.get_object(bucket, path)
+        return response.read().decode()
+    except S3Error as e:
+        raise StorageError(f"Failed to download from Minio: {e}") from e
 
 def upload_json(bucket, path, data_dict):
     """Uploads a dictionary as a JSON file to MinIO."""

@@ -1,18 +1,14 @@
-import os
-from dotenv import load_dotenv
 from llm.gemini_client import call_llm
 from llm.prompts.scenarios import PROMPT
-
-load_dotenv()
+from config import config
 
 def run(ctx):
-    llm_provider = os.getenv("LLM_PROVIDER", "cloud")
-    if llm_provider == "cloud":
-        model_name = os.getenv("CLOUD_MODEL_NAME", "gemini-pro")
-    else: # local
-        model_name = os.getenv("LOCAL_MODEL_NAME", "llama2")
+    if config.llm_provider == "cloud":
+        model_name = config.cloud_model_name
+    else:
+        model_name = config.local_model_name
     
-    temperature = float(os.getenv("GEMINI_TEMPERATURE", "0.7"))
+    temperature = config.gemini_temperature
     
     scenarios = ctx["masked_scenarios"]
     prompt_text = PROMPT.format(checklist=scenarios)
