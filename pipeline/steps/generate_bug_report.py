@@ -1,9 +1,8 @@
 import os
 import json
 import re
-from llm.gemini_client import call_llm
+from llm.llm_client import call_llm
 from llm.prompts.bug_report import PROMPT
-from dotenv import load_dotenv
 from logs.logger import log_error
 
 def _extract_json_from_llm_response(text: str) -> str:

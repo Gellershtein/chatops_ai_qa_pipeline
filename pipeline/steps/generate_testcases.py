@@ -3,7 +3,7 @@ import os
 import json
 import re
 from dotenv import load_dotenv
-from llm.gemini_client import call_llm
+from llm.llm_client import call_llm
 from logs.logger import log_error  # Оставляем для критических ошибок
 
 load_dotenv()

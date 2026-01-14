@@ -2,7 +2,7 @@ import os
 import json
 import re
 from dotenv import load_dotenv
-from llm.gemini_client import call_llm
+from llm.llm_client import call_llm
 from llm.prompts.code_review import PROMPT
 
 load_dotenv()

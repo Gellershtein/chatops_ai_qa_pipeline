@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv  # ← добавь импорт
-from llm.gemini_client import call_llm
+from llm.llm_client import call_llm
 from llm.prompts.qa_summary import PROMPT
 from logs.logger import log_error
 

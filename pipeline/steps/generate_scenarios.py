@@ -1,5 +1,5 @@
 import os
-from llm.gemini_client import call_llm
+from llm.llm_client import call_llm
 from llm.prompts.scenarios import PROMPT
 
 def run(ctx):
