@@ -5,14 +5,14 @@ from storage.minio_client import download
 from logs.logger import log_error
 from pipeline.steps import (
     generate_scenarios,
-    pii_scan,
+
     generate_testcases,
     generate_autotests,
     code_quality_check,
     ai_code_review,
     generate_qa_summary,
     generate_bug_report,
-    run_autotests
+    run_autotests, pii_scan
 )
 
 # Define the sequence of pipeline steps

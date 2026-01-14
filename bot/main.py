@@ -1,5 +1,5 @@
+import os
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackQueryHandler
-from config import config
 from bot.handlers import (
     start,
     handle_file,
@@ -8,7 +8,7 @@ from bot.handlers import (
 
 def main():
     """Starts the bot."""
-    app = ApplicationBuilder().token(config.telegram_bot_token).build()
+    app = ApplicationBuilder().token(os.getenv("TELEGRAM_BOT_TOKEN")).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_file))

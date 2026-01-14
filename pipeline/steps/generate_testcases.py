@@ -10,12 +10,15 @@ load_dotenv()
 
 
 def _extract_json_obj(text: str) -> str:
-    """Извлекает самую внешнюю пару {...} из текста."""
+    """Извлекает самую внешнюю пару {...} из текста и удаляет однострочные комментарии."""
     start = text.find('{')
     end = text.rfind('}')
     if start == -1 or end == -1 or start >= end:
         raise ValueError("No valid JSON object detected in LLM response")
-    return text[start:end + 1]
+    json_str = text[start:end + 1]
+    # Удаляем однострочные комментарии вида // ...
+    json_str = re.sub(r"//.*", "", json_str)
+    return json_str
 
 
 def run(ctx):

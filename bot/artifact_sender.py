@@ -3,9 +3,9 @@ import tempfile
 import shutil
 import json
 from telegram.ext import ContextTypes
+from telegram import Update
 from storage.minio_client import upload
 from logs.logger import log_error
-from config import config
 
 async def send_folder_as_zip(context: ContextTypes.DEFAULT_TYPE, chat_id: int, folder_path: str, zip_filename: str):
     """
@@ -39,7 +39,7 @@ async def send_folder_as_zip(context: ContextTypes.DEFAULT_TYPE, chat_id: int, f
         with open(tmp_zip_path, 'rb') as f:
             zip_content = f.read()
         minio_path = f"{run_id}/{zip_filename}"
-        upload(config.minio_bucket, minio_path, zip_content)
+        upload(os.getenv("MINIO_BUCKET"), minio_path, zip_content)
 
         temp_dir = tempfile.mkdtemp()
         final_zip_path = os.path.join(temp_dir, final_zip_name)
@@ -244,7 +244,7 @@ async def send_content_as_file_from_minio(context: ContextTypes.DEFAULT_TYPE, ch
     minio_path = f"{run_id}/{filename}"
     temp_dir = None
     try:
-        upload(config.minio_bucket, minio_path, content.encode('utf-8'))
+        upload(os.getenv("MINIO_BUCKET"), minio_path, content.encode('utf-8'))
 
         temp_dir = tempfile.mkdtemp()
         prefixed_filename = f"{run_id}_{filename}"

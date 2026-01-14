@@ -1,6 +1,6 @@
-FROM python:3.14
+FROM python:3.13
 
-# Устанавливаем Chrome (только amd64, даже на ARM)
+# Установка Chrome
 RUN apt-get update && apt-get install -y \
     wget ca-certificates gnupg curl \
     && install -m 0755 -d /etc/apt/keyrings \
@@ -16,5 +16,7 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+RUN python -m spacy download en_core_web_lg
 
 COPY . /app

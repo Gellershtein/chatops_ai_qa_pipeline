@@ -1,19 +1,22 @@
+import os
 from google import genai
 import requests
-from config import config
 from utils.exceptions import LLMError
 
 def get_llm_client():
-    if config.llm_provider == "cloud":
-        if not config.gemini_api_key:
+    llm_provider = os.getenv("LLM_PROVIDER", "cloud") # Default to "cloud" if not set
+    if llm_provider == "cloud":
+        gemini_api_key = os.getenv("GEMINI_API_KEY")
+        if not gemini_api_key:
             raise LLMError("GEMINI_API_KEY is not set for 'cloud' LLM_PROVIDER.")
         print("Using Google Gemini (Cloud) LLM provider.")
-        return genai.Client(api_key=config.gemini_api_key)
-    elif config.llm_provider == "local":
-        print(f"Using Local LLM provider with endpoint: {config.local_llm_endpoint}")
-        return LocalLLMClient(config.local_llm_endpoint)
+        return genai.Client(api_key=gemini_api_key)
+    elif llm_provider == "local":
+        local_llm_endpoint = os.getenv("LOCAL_LLM_ENDPOINT", "http://localhost:8000/v1") # Default if not set
+        print(f"Using Local LLM provider with endpoint: {local_llm_endpoint}")
+        return LocalLLMClient(local_llm_endpoint)
     else:
-        raise LLMError(f"Unsupported LLM_PROVIDER: {config.llm_provider}. Must be 'cloud' or 'local'.")
+        raise LLMError(f"Unsupported LLM_PROVIDER: {llm_provider}. Must be 'cloud' or 'local'.")
 
 class LocalLLMClient:
     def __init__(self, endpoint):
@@ -45,14 +48,15 @@ class LocalLLMClient:
 client = get_llm_client()
 
 def call_llm(model_name: str, temperature: float, prompt: str):
+    llm_provider = os.getenv("LLM_PROVIDER", "cloud")
     try:
-        if config.llm_provider == "cloud":
+        if llm_provider == "cloud":
             response = client.models.generate_content(
                 model=model_name,
                 contents=[prompt],
                 generation_config={"temperature": temperature}
             )
-        elif config.llm_provider == "local":
+        elif llm_provider == "local":
             response = client.generate_content(
                 model=model_name,
                 contents=[prompt],

@@ -11,7 +11,6 @@ python-dotenv
 selenium
 webdriver-manager
 xmltodict
-pydantic
-pydantic-settings
 presidio-analyzer
 presidio-anonymizer
+spacy

@@ -15,7 +15,6 @@ from bot.artifact_sender import send_step_artifacts_if_available
 from utils.exceptions import PipelineError, StorageError, LLMError
 from logs.logger import log_error
 from storage.minio_client import upload
-from config import config
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Starts the bot and sends a welcome message."""
@@ -57,7 +56,7 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with open(file_path, 'rb') as f:
                 content_bytes = f.read()
 
-        upload(config.minio_bucket, doc.file_name, content_bytes)
+        upload(os.getenv("MINIO_BUCKET"), doc.file_name, content_bytes)
         ctx = initialize_pipeline(doc.file_name)
         pipeline_runs[chat_id] = ctx["run_id"]
         save_context_to_minio(ctx)

@@ -1,15 +1,15 @@
+import os
 import json
 from minio import Minio
 from minio.error import S3Error
 from io import BytesIO
-from config import config
 from utils.exceptions import StorageError
 
 client = Minio(
-    config.minio_endpoint,
-    access_key=config.minio_access_key,
-    secret_key=config.minio_secret_key,
-    secure=config.minio_secure
+    os.getenv("MINIO_ENDPOINT"),
+    access_key=os.getenv("MINIO_ACCESS_KEY"),
+    secret_key=os.getenv("MINIO_SECRET_KEY"),
+    secure=os.getenv("MINIO_SECURE") == 'True'
 )
 
 def upload(bucket, path, content: bytes):
