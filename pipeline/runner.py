@@ -25,8 +25,7 @@ PIPELINE_STEPS = [
     ("Performing AI Code Review", ai_code_review.run),
     ("Running Autotests", run_autotests.run),
     ("Generating QA Summary", generate_qa_summary.run),
-    ("Generating Bug Report", generate_bug_report.run),
-    #("Uploading Artifacts to MinIO", upload_artifacts.run),
+    ("Generating Bug Report", generate_bug_report.run)
 ]
 
 def initialize_pipeline(file_name):

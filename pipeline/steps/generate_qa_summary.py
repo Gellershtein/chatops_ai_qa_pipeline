@@ -31,7 +31,6 @@ def run(ctx):
         return
 
     try:
-        # === Настройки LLM (как в других шагах) ===
         llm_provider = os.getenv("LLM_PROVIDER", "cloud")
         if llm_provider == "cloud":
             model_name = os.getenv("CLOUD_MODEL_NAME", "gemini-pro")
@@ -41,7 +40,6 @@ def run(ctx):
 
         prompt = PROMPT.format(test_log=test_log, test_xml=test_xml)
 
-        # === Правильный вызов ===
         summary_text = call_llm(
             model_name=model_name,
             temperature=temperature,

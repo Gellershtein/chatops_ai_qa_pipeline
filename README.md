@@ -9,20 +9,20 @@ The project consists of several key components working together in a containeriz
 ```mermaid
 graph TD
     subgraph User Interaction
-        A[User] -->|Sends requirements file| B(Telegram Bot);
+        A[User] -->|Sends checklist file| B(Telegram Bot);
     end
 
     subgraph AI QA Pipeline
         B --> C{AI/LLM};
-        C --> D[Generate Scenarios];
-        D --> E[Generate Test Cases];
-        E --> F[Generate Autotests];
-        F --> G[Code Quality Check];
-        G --> H[AI Code Review];
-        H --> I[Run Autotests];
-        I --> J[PII Scan];
-        J --> K[Generate Bug Report];
-        K --> L[Generate QA Summary];
+        C --> D[PII Masking];
+        D --> E[Generating Scenarios];
+        E --> F[Generating Test Cases];
+        F --> G[Generating Autotests];
+        G --> H[Checking Code Quality];
+        H --> I[Performing AI Code Review];
+        I --> J[Running Autotests];
+        J --> K[Generating QA Summary];
+        K --> L[Generating Bug Report];
     end
 
     subgraph Storage
@@ -34,7 +34,17 @@ graph TD
 
 1.  **Telegram Bot**: The main interface for user interaction. The bot accepts requirement files, manages the pipeline's execution, and provides artifacts.
 2.  **AI/LLM**: The project supports both cloud-based models (defaulting to `gemini-pro` via the Google Gemini API) and local models (e.g., `codegemma:7b` via a local LLM server like Ollama). The model and configuration are selected through environment variables such as `LLM_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_MODEL_NAME`, `LOCAL_MODEL_NAME`, and `LOCAL_LLM_ENDPOINT`.
-3.  **AI QA Pipeline**: A sequence of steps for processing requirements and performing QA. Each step is executed as a separate module.
+3.  **AI QA Pipeline**: A sequence of steps for processing requirements and performing QA:
+    -   PII Masking
+    -   Generating Scenarios
+    -   Generating Test Cases
+    -   Generating Autotests
+    -   Checking Code Quality
+    -   Performing AI Code Review
+    -   Running Autotests
+    -   Generating QA Summary
+    -   Generating Bug Report
+    Each step is executed as a separate module.
 4.  **Artifact Storage (Minio)**: Used for storing both the initial files and all artifacts generated during the process.
 5.  **Containerization (Docker)**: All system components (the application and Minio) run in isolated Docker containers, ensuring easy deployment and scalability.
 
@@ -112,7 +122,7 @@ This command will build the Docker image for the application and start the conta
 ## Usage
 
 1.  **Open Telegram and find your bot.**
-2.  **Send the bot a `.txt` or `.json` file with the requirements.** For example, you can use the file from `examples/checklist_login.txt`.
+2. **After the welcome message, you will receive an example `checklist_login.txt` file.** Forward this file back to the bot to start, or upload your own `.txt` file with checklist.
 3.  **The bot will initialize the pipeline.** You will see a message indicating the start of the process and buttons for control.
 4.  **Run the AI QA pipeline steps** by clicking the `▶️ Run: ...` button.
 5.  **Download artifacts** by clicking the `📄 Download Artifacts` button. The artifacts will be sent to you in the chat.

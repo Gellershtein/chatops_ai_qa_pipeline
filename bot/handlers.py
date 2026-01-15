@@ -1,7 +1,7 @@
-from telegram import Update
+import os
+from telegram import Update, InputFile
 from telegram.ext import ContextTypes
 import tempfile
-import os
 from pipeline.runner import initialize_pipeline, PIPELINE_STEPS
 from bot.keyboards import get_main_keyboard
 from bot.state_manager import (
@@ -21,9 +21,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="👋 Welcome to the AI QA Pipeline Bot!\n\n"
+             "This bot automates the process of generating scenarios, test cases, and autotests for *SauceDemo login page*.\n\n"
              "📤 Please upload a .txt file with your checklist for the "
-             "**SauceDemo login page** (https://www.saucedemo.com/) to begin."
+             "**SauceDemo login page** (https://www.saucedemo.com/) to begin or use the example below"
     )
+
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="⚠️ Here is an example checklist you can use to start: just forward it back to me in this chat to proceed.",
+        parse_mode='Markdown'
+    )
+    # Send the example file directly
+    with open("examples/checklist_login.txt", 'rb') as f:
+        await context.bot.send_document(
+            chat_id=update.effective_chat.id,
+            document=InputFile(f, filename="checklist_login.txt"),
+            caption="📤 checklist_login.txt"
+        )
 
 
 async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -42,9 +56,9 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     doc = update.message.document
-    if not doc.file_name.endswith((".txt", ".json")):
+    if not doc.file_name.endswith((".txt")):
         await context.bot.send_message(
-            chat_id=chat_id, text="📄 Please upload a .txt or .json file."
+            chat_id=chat_id, text="📄 Please upload a .txt"
         )
         return
 

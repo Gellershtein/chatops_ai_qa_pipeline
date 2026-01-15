@@ -7,6 +7,7 @@ def get_llm_client():
     llm_provider = os.getenv("LLM_PROVIDER", "cloud") # Default to "cloud" if not set
     if llm_provider == "cloud":
         gemini_api_key = os.getenv("GEMINI_API_KEY")
+        print(f"DEBUG: Loaded GEMINI_API_KEY: {gemini_api_key[:5]}...")  # Показываем первые 5 символов
         if not gemini_api_key:
             raise LLMError("GEMINI_API_KEY is not set for 'cloud' LLM_PROVIDER.")
         print("Using Google Gemini (Cloud) LLM provider.")
@@ -53,8 +54,7 @@ def call_llm(model_name: str, temperature: float, prompt: str):
         if llm_provider == "cloud":
             response = client.models.generate_content(
                 model=model_name,
-                contents=[prompt],
-                generation_config={"temperature": temperature}
+                contents=[prompt]
             )
         elif llm_provider == "local":
             response = client.generate_content(
