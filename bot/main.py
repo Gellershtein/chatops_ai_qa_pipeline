@@ -17,6 +17,9 @@ def main() -> None:
     the /start command, file uploads, and inline keyboard button clicks,
     then begins polling for updates.
     """
+    # Create artifacts directory if it doesn't exist
+    os.makedirs("artifacts", exist_ok=True)
+
     # Build the Application using the bot token from environment variables
     app = ApplicationBuilder().token(os.getenv("TELEGRAM_BOT_TOKEN")).build()
 
