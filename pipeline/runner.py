@@ -1,4 +1,6 @@
-
+"""
+This module defines the AI QA pipeline steps and provides functionality to initialize a pipeline run.
+"""
 import uuid
 import os
 from storage.minio_client import download
@@ -16,6 +18,7 @@ from pipeline.steps import (
 )
 
 # Define the sequence of pipeline steps
+# Each tuple contains the step name and the function to execute for that step.
 PIPELINE_STEPS = [
     ("PII Masking", pii_scan.run),
     ("Generating Scenarios", generate_scenarios.run),
@@ -28,9 +31,23 @@ PIPELINE_STEPS = [
     ("Generating Bug Report", generate_bug_report.run)
 ]
 
-def initialize_pipeline(file_name):
+def initialize_pipeline(file_name: str) -> dict:
     """
-    Initializes the pipeline run, creating the initial context.
+    Initializes a new pipeline run by creating a unique run ID, downloading the input file,
+    and setting up the initial context for pipeline execution.
+
+    Args:
+        file_name (str): The name of the file to be processed by the pipeline.
+
+    Returns:
+        dict: A dictionary containing the initial pipeline context, including:
+              - 'run_id' (str): A unique identifier for the current pipeline run.
+              - 'file_name' (str): The name of the input file.
+              - 'txt' (str): The content of the input file.
+              - 'step_index' (int): The current step index, initialized to 0.
+
+    Raises:
+        Exception: If there is an error downloading the file or initializing the context.
     """
     try:
         bucket_name = os.getenv("MINIO_BUCKET", "qa-pipeline")

@@ -1,9 +1,19 @@
+"""
+This module defines the Large Language Model (LLM) prompt used for performing code reviews
+on auto-generated Python + Pytest tests. The prompt instructs the LLM to act as a Senior QA Automation Architect,
+focusing on specific quality aspects and outputting a structured JSON review.
+"""
+
 PROMPT = '''
-You are a Senior QA Automation Architect.
+# Code Review Prompt for LLM
 
-Perform a strict code review of the auto-generated Python + Pytest test below.
+You are a Senior QA Automation Architect. Your task is to perform a strict code review of the
+auto-generated Python + Pytest test provided below.
 
-Respond ONLY with a valid JSON object containing:
+## Output Format:
+
+Respond **ONLY** with a valid JSON object containing the following structure:
+```json
 {{
   "test_id": "{test_id}",
   "issues": [
@@ -16,22 +26,27 @@ Respond ONLY with a valid JSON object containing:
   ],
   "summary": "Overall assessment in one sentence"
 }}
+```
+-   If **no issues are found**, set `"issues": []` and write a positive overall summary.
 
-Analyze the code and provide:
-- Functional risks
-- Test design issues
-- Stability problems
-- Maintainability issues
-- Suggestions for improvement
+## Analysis Areas:
 
-Rules:
-- Do not rewrite the code
-- Be concise but professional
-- Focus on test automation quality
-- Output MUST be valid JSON
-- NO markdown, NO explanations, NO extra text
-- If no issues found, set "issues": [] and write positive summary
+Analyze the `CODE` and provide insights on:
+-   **Functional risks**: Potential areas where the test might not correctly verify functionality.
+-   **Test design issues**: Problems with how the test is structured or conceived.
+-   **Stability problems**: Factors that might make the test flaky or unreliable.
+-   **Maintainability issues**: Aspects that make the test hard to understand, modify, or extend.
+-   **Suggestions for improvement**: Specific and actionable recommendations.
 
-CODE:
+## Important Rules:
+-   **DO NOT rewrite the code.** Provide suggestions only.
+-   Be concise but professional in your descriptions and suggestions.
+-   Focus exclusively on test automation quality.
+-   Output **MUST** be valid JSON.
+-   **NO** markdown, **NO** explanations, **NO** extra text outside the JSON object.
+
+---
+
+**CODE (provided for review):**
 {code}
 '''

@@ -1,57 +1,75 @@
+"""
+This module provides functions for sending various types of artifacts (e.g., zipped folders, text files)
+to users via the Telegram bot, often involving temporary storage and Minio upload/download operations.
+"""
 import os
 import tempfile
 import shutil
 import json
 from telegram.ext import ContextTypes
-from telegram import Update
+from telegram import Update, InputFile # Import InputFile for sending files
 from storage.minio_client import upload
 from logs.logger import log_error
 
-async def send_folder_as_zip(context: ContextTypes.DEFAULT_TYPE, chat_id: int, folder_path: str, zip_filename: str):
+async def send_folder_as_zip(context: ContextTypes.DEFAULT_TYPE, chat_id: int, folder_path: str, zip_filename: str) -> None:
     """
-    Zips a folder, uploads it to MinIO, and sends it to the user.
+    Zips a specified folder, uploads the resulting zip file to MinIO, and then
+    sends this zip file as a document to the specified Telegram chat.
 
     Args:
-        context: The Telegram context.
-        chat_id: The ID of the chat to send the file to.
-        folder_path: The path to the folder to zip.
-        zip_filename: The name of the zip file.
+        context (ContextTypes.DEFAULT_TYPE): The Telegram context object.
+        chat_id (int): The ID of the chat to which the zip file should be sent.
+        folder_path (str): The absolute path to the folder that needs to be zipped.
+        zip_filename (str): The desired name for the zip file (e.g., "autotests.zip").
+                            This name will be used both in MinIO and as the filename
+                            when sent to Telegram.
     """
     if not os.path.isdir(folder_path):
         log_error(f"Folder not found for zipping: {folder_path}")
-        await context.bot.send_message(chat_id=chat_id, text=f"⚠️ Folder not found: {folder_path}")
+        await context.bot.send_message(chat_id=chat_id, text=f"⚠️ Folder not found: `{folder_path}`", parse_mode='Markdown')
         return
 
     tmp_zip_path = ""
+    temp_dir = None # Initialize temp_dir to None
     try:
+        # Create a temporary file for the zip archive
         with tempfile.NamedTemporaryFile(delete=False, suffix=".zip") as tmp:
             tmp_zip_path = tmp.name
 
+        # Create the zip archive from the specified folder
         shutil.make_archive(tmp_zip_path.replace(".zip", ""), 'zip', folder_path)
 
+        # Determine the run_id from the folder_path for naming conventions
         try:
+            # Assuming folder_path is like /path/to/artifacts/{RUN_ID}/autotests
             run_id = folder_path.split(os.sep)[-2]
         except IndexError:
             run_id = "unknown"
 
+        # Construct the final name for the zip file for Telegram and MinIO
         final_zip_name = f"{run_id}_{zip_filename}"
 
+        # Read the content of the created zip file
         with open(tmp_zip_path, 'rb') as f:
             zip_content = f.read()
+        
+        # Upload the zip file to MinIO
         minio_path = f"{run_id}/{zip_filename}"
         upload(os.getenv("MINIO_BUCKET"), minio_path, zip_content)
 
+        # Create another temporary directory to hold the zip file with the final name
+        # This is necessary because send_document requires a file object with the correct filename
         temp_dir = tempfile.mkdtemp()
         final_zip_path = os.path.join(temp_dir, final_zip_name)
 
-        with open(final_zip_path, 'wb') as dst:
-            with open(tmp_zip_path, 'rb') as src:
-                dst.write(src.read())
+        # Copy the generated zip to the new temporary location with its final name
+        shutil.copy2(tmp_zip_path, final_zip_path)
 
+        # Send the zip file to Telegram
         with open(final_zip_path, 'rb') as f:
             await context.bot.send_document(
                 chat_id=chat_id,
-                document=f,
+                document=InputFile(f, filename=final_zip_name), # Use InputFile for explicit filename
                 caption=f"📦 Autotests Archive: `{final_zip_name}`",
                 parse_mode='Markdown'
             )
@@ -60,50 +78,62 @@ async def send_folder_as_zip(context: ContextTypes.DEFAULT_TYPE, chat_id: int, f
         log_error(f"Failed to create/send/upload ZIP from {folder_path}: {e}")
         await context.bot.send_message(
             chat_id=chat_id,
-            text=f"⚠️ Failed to create or send the archive: {zip_filename}"
+            text=f"⚠️ Failed to create or send the archive: `{zip_filename}`",
+            parse_mode='Markdown'
         )
     finally:
+        # Clean up temporary files and directories
         if tmp_zip_path and os.path.exists(tmp_zip_path):
-            os.unlink(tmp_zip_path)
-        if 'temp_dir' in locals() and os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            os.unlink(tmp_zip_path) # Delete the initially created zip file
+        if temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir) # Delete the temporary directory and its contents
 
-async def send_step_artifacts_if_available(update: Update, context: ContextTypes.DEFAULT_TYPE, ctx: dict, step_name: str):
+async def send_step_artifacts_if_available(update: Update, context: ContextTypes.DEFAULT_TYPE, ctx: dict, step_name: str) -> None:
     """
-    Sends the artifacts for a given step to the user.
+    Checks the pipeline context for artifacts generated by a specific step and sends them
+    to the user via Telegram. Different steps generate different types of artifacts
+    (e.g., text files, JSON, zip archives, HTML reports).
 
     Args:
-        update: The Telegram update.
-        context: The Telegram context.
-        ctx: The pipeline context.
-        step_name: The name of the step.
+        update (Update): The Telegram update object.
+        context (ContextTypes.DEFAULT_TYPE): The context object for the current update.
+        ctx (dict): The pipeline context dictionary containing information about the run
+                    and generated artifacts.
+        step_name (str): The name of the pipeline step that has just been completed.
     """
     chat_id = update.effective_chat.id
     run_id = ctx["run_id"]
 
     sent_count = 0
 
+    # Handle artifacts for "Generating Scenarios" step
     if step_name == "Generating Scenarios":
         if ctx.get("scenarios"):
             await send_content_as_file_from_minio(context, chat_id, run_id, "scenarios.txt", "🧠 Generated Scenarios", ctx["scenarios"])
             sent_count += 1
 
+    # Handle artifacts for "PII Masking" step
     elif step_name == "PII Masking":
         if ctx.get("masked_scenarios"):
             await send_content_as_file_from_minio(context, chat_id, run_id, "masked_scenarios.txt", "🔒 PII Masked Scenarios", ctx["masked_scenarios"])
             sent_count += 1
 
+    # Handle artifacts for "Generating Test Cases" step
     elif step_name == "Generating Test Cases":
         if ctx.get("testcases_json"):
+            # Convert JSON object to a pretty-printed string for readability
             testcases_str = json.dumps(ctx["testcases_json"], indent=2, ensure_ascii=False)
             await send_content_as_file_from_minio(context, chat_id, run_id, "testcases.json", "📋 Generated Test Cases (JSON)", testcases_str)
             sent_count += 1
 
+    # Handle artifacts for "Generating Autotests" step
     elif step_name == "Generating Autotests":
         if ctx.get("autotests_dir"):
+            # Send the entire autotests directory as a zip file
             await send_folder_as_zip(context, chat_id, ctx["autotests_dir"], "autotests.zip")
             sent_count += 1
 
+    # Handle artifacts for "Checking Code Quality" step
     elif step_name == "Checking Code Quality":
         report_path = ctx.get("code_quality_report")
         if report_path and os.path.exists(report_path):
@@ -117,6 +147,7 @@ async def send_step_artifacts_if_available(update: Update, context: ContextTypes
             )
             sent_count += 1
 
+    # Handle artifacts for "Performing AI Code Review" step
     elif step_name == "Performing AI Code Review":
         review_files = ctx.get("ai_code_reviews", [])
         for review_path in review_files:
@@ -132,11 +163,12 @@ async def send_step_artifacts_if_available(update: Update, context: ContextTypes
                 )
                 sent_count += 1
 
-
+    # Handle artifacts for "Running Autotests" step
     elif step_name == "Running Autotests":
         sent = 0
         summary = ctx.get("test_summary", {})
         if summary and "error" not in summary:
+            # Send a summary of the test run as a text message
             total = summary["total"]
             passed = summary["passed"]
             failed = summary["failed"]
@@ -156,6 +188,7 @@ async def send_step_artifacts_if_available(update: Update, context: ContextTypes
             sent += 1
 
         if ctx.get("test_report_html"):
+            # Send the HTML test report as a document
             with open(ctx["test_report_html"], "rb") as f:
                 temp_dir = tempfile.mkdtemp()
                 final_name = f"{run_id}_test_report.html"
@@ -165,19 +198,19 @@ async def send_step_artifacts_if_available(update: Update, context: ContextTypes
                     dst.write(f.read())
 
                 with open(final_path, 'rb') as f_to_send:
-                    await context.bot.send_document(chat_id, f_to_send, caption=f"📊 HTML Test Report ({final_name})")
+                    await context.bot.send_document(chat_id, InputFile(f_to_send, filename=final_name), caption=f"📊 HTML Test Report ({final_name})")
 
                 shutil.rmtree(temp_dir)
             sent += 1
-
         else:
             await context.bot.send_message(chat_id, text="⚠️ HTML report not generated (missing pytest-html)")
 
         if ctx.get("test_run_log"):
+            # Send the test run log. If it's too long, send as a file; otherwise, send as text.
             with open(ctx["test_run_log"], "r", encoding="utf-8") as f:
                 log_content = f.read()
 
-            if len(log_content) < 3500:
+            if len(log_content) < 3500: # Telegram message length limit is 4096 characters
                 await context.bot.send_message(
                     chat_id,
                     text=f"📋 *Test Log*\n```\n{log_content}\n```",
@@ -192,7 +225,7 @@ async def send_step_artifacts_if_available(update: Update, context: ContextTypes
                     dst.write(log_content)
 
                 with open(final_path, 'rb') as f_to_send:
-                    await context.bot.send_document(chat_id, f_to_send, caption=f"📋 Full Test Log ({final_name})")
+                    await context.bot.send_document(chat_id, InputFile(f_to_send, filename=final_name), caption=f"📋 Full Test Log ({final_name})")
 
                 shutil.rmtree(temp_dir)
             sent += 1
@@ -200,6 +233,7 @@ async def send_step_artifacts_if_available(update: Update, context: ContextTypes
         if sent > 0:
             sent_count += sent
 
+    # Handle artifacts for "Generating QA Summary" step
     elif step_name == "Generating QA Summary":
         if ctx.get("qa_summary_report"):
             with open(ctx["qa_summary_report"], "r", encoding="utf-8") as f:
@@ -212,6 +246,7 @@ async def send_step_artifacts_if_available(update: Update, context: ContextTypes
             )
             sent_count += 1
 
+    # Handle artifacts for "Generating Bug Report" step
     elif step_name == "Generating Bug Report":
         if ctx.get("bug_report"):
             with open(ctx["bug_report"], "r", encoding="utf-8") as f:
@@ -221,6 +256,7 @@ async def send_step_artifacts_if_available(update: Update, context: ContextTypes
                                                    content)
             sent_count += 1
 
+    # Send a final confirmation message if any artifacts were sent
     if sent_count > 0:
         await context.bot.send_message(
             chat_id=chat_id,
@@ -229,36 +265,43 @@ async def send_step_artifacts_if_available(update: Update, context: ContextTypes
         )
 
 async def send_content_as_file_from_minio(context: ContextTypes.DEFAULT_TYPE, chat_id: int, run_id: str, filename: str,
-                                           caption: str, content: str):
+                                           caption: str, content: str) -> None:
     """
-    Sends string content as a file to the user, uploading it to MinIO first.
+    Sends arbitrary string content as a file to the user via Telegram.
+    The content is first uploaded to MinIO for persistence and then temporarily
+    saved locally to be sent as a Telegram document.
 
     Args:
-        context: The Telegram context.
-        chat_id: The ID of the chat to send the file to.
-        run_id: The ID of the pipeline run.
-        filename: The name of the file.
-        caption: The caption for the file.
-        content: The content of the file.
+        context (ContextTypes.DEFAULT_TYPE): The Telegram context object.
+        chat_id (int): The ID of the chat to send the file to.
+        run_id (str): The ID of the pipeline run, used for MinIO path and temporary file naming.
+        filename (str): The desired name for the file when sent to the user.
+        caption (str): The caption to accompany the file in the Telegram message.
+        content (str): The string content to be sent as a file.
     """
     minio_path = f"{run_id}/{filename}"
-    temp_dir = None
+    temp_dir = None # Initialize temp_dir to None
     try:
+        # Upload content to MinIO
         upload(os.getenv("MINIO_BUCKET"), minio_path, content.encode('utf-8'))
 
+        # Create a temporary directory and file to prepare for sending to Telegram
         temp_dir = tempfile.mkdtemp()
-        prefixed_filename = f"{run_id}_{filename}"
+        # Prepend run_id to filename to ensure uniqueness in temporary storage
+        prefixed_filename = f"{run_id}_{filename}" 
         temp_file_path = os.path.join(temp_dir, prefixed_filename)
 
         with open(temp_file_path, 'wb') as f:
             f.write(content.encode('utf-8'))
 
+        # Send the file to Telegram
         with open(temp_file_path, 'rb') as f:
-            await context.bot.send_document(chat_id=chat_id, document=f, caption=caption)
+            await context.bot.send_document(chat_id=chat_id, document=InputFile(f, filename=prefixed_filename), caption=caption)
 
     except Exception as e:
         log_error(f"Failed to send and/or upload content artifact {filename} for run_id {run_id}: {e}")
-        await context.bot.send_message(chat_id=chat_id, text=f"⚠️ Could not send artifact: {filename}")
+        await context.bot.send_message(chat_id=chat_id, text=f"⚠️ Could not send artifact: `{filename}`", parse_mode='Markdown')
     finally:
+        # Clean up the temporary directory and its contents
         if temp_dir and os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
