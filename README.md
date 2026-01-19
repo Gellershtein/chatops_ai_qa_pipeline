@@ -37,7 +37,6 @@ graph TD
     D --> E --> F --> G --> H --> I --> J --> K --> L
 
     %% Each step uses LLM
-    D -.->|prompt| C
     E -.->|prompt| C
     F -.->|prompt| C
     G -.->|prompt| C
