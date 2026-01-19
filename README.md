@@ -37,23 +37,23 @@ graph TD
     D --> E --> F --> G --> H --> I --> J --> K --> L
 
     %% Each step uses LLM
-    E -.->|prompt| C
-    F -.->|prompt| C
-    G -.->|prompt| C
-    H -.->|prompt| C
-    I -.->|prompt| C
-    J -.->|prompt| C
-    K -.->|prompt| C
-    L -.->|prompt| C
+    E -.->|send prompt with file(s)| C
+    F -.->|send prompt with file(s)| C
+    G -.->|send prompt with file(s)| C
+    H -.->|send prompt with file(s)| C
+    I -.->|send prompt with file(s)| C
+    J -.->|send prompt with file(s)| C
+    K -.->|send prompt with file(s)| C
+    L -.->|send prompt with file(s)| C
 
-    C -.->|response| E
-    C -.->|response| F
-    C -.->|response| G
-    C -.->|response| H
-    C -.->|response| I
-    C -.->|response| J
-    C -.->|response| K
-    C -.->|response| L
+    C -.->|LLM response| E
+    C -.->|LLM response| F
+    C -.->|LLM response| G
+    C -.->|LLM response| H
+    C -.->|LLM response| I
+    C -.->|LLM response| J
+    C -.->|LLM response| K
+    C -.->|LLM response| L
 
     %% Artifact persistence per step
     D -->|response artifact| M
@@ -67,7 +67,7 @@ graph TD
     L -->|response artifact| M
 
     %% Bot delivers artifacts to user
-    M -->|send file / message with Step's response artifact| B
+    M -->|send file / message with Step's LLM response artifact| B
 
 ```
 
