@@ -46,7 +46,6 @@ graph TD
     K -.->|prompt| C
     L -.->|prompt| C
 
-    C -.->|response| D
     C -.->|response| E
     C -.->|response| F
     C -.->|response| G
