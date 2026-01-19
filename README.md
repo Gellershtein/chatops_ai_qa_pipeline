@@ -67,7 +67,7 @@ graph TD
     L -->|response artifact| M
 
     %% Bot delivers artifacts to user
-    M -->|send file / message with Step's LLM response artifact| B
+    M -->|send file / message with Step LLM response artifact| B
 
 ```
 
