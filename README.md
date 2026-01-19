@@ -37,14 +37,14 @@ graph TD
     D --> E --> F --> G --> H --> I --> J --> K --> L
 
     %% Each step uses LLM
-    E -.->|send prompt with file(s)| C
-    F -.->|send prompt with file(s)| C
-    G -.->|send prompt with file(s)| C
-    H -.->|send prompt with file(s)| C
-    I -.->|send prompt with file(s)| C
-    J -.->|send prompt with file(s)| C
-    K -.->|send prompt with file(s)| C
-    L -.->|send prompt with file(s)| C
+    E -.->|send prompt with file| C
+    F -.->|send prompt with file| C
+    G -.->|send prompt with file| C
+    H -.->|send prompt with file| C
+    I -.->|send prompt with file| C
+    J -.->|send prompt with file| C
+    K -.->|send prompt with file| C
+    L -.->|send prompt with file| C
 
     C -.->|LLM response| E
     C -.->|LLM response| F
