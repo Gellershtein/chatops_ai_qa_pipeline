@@ -9,27 +9,68 @@ The project consists of several key components working together in a containeriz
 ```mermaid
 graph TD
     subgraph User Interaction
-        A[User] -->|Sends checklist file| B(Telegram Bot);
+        A[User] -->|Sends checklist file| B(Telegram Bot)
     end
 
     subgraph AI QA Pipeline
-        B --> C{AI/LLM};
-        C --> D[PII Masking];
-        D --> E[Generating Scenarios];
-        E --> F[Generating Test Cases];
-        F --> G[Generating Autotests];
-        G --> H[Checking Code Quality];
-        H --> I[Performing AI Code Review];
-        I --> J[Running Autotests];
-        J --> K[Generating QA Summary];
-        K --> L[Generating Bug Report];
+        D[PII Masking]
+        E[Generating Scenarios]
+        F[Generating Test Cases]
+        G[Generating Autotests]
+        H[Checking Code Quality]
+        I[Performing AI Code Review]
+        J[Running Autotests]
+        K[Generating QA Summary]
+        L[Generating Bug Report]
+    end
+
+    subgraph AI Services
+        C{AI / LLM}
     end
 
     subgraph Storage
-        L --> M(Minio);
+        M[(MinIO)]
     end
 
-    B --> M;
+    %% Pipeline control flow
+    B --> D
+    D --> E --> F --> G --> H --> I --> J --> K --> L
+
+    %% Each step uses LLM
+    D -.->|prompt| C
+    E -.->|prompt| C
+    F -.->|prompt| C
+    G -.->|prompt| C
+    H -.->|prompt| C
+    I -.->|prompt| C
+    J -.->|prompt| C
+    K -.->|prompt| C
+    L -.->|prompt| C
+
+    C -.->|response| D
+    C -.->|response| E
+    C -.->|response| F
+    C -.->|response| G
+    C -.->|response| H
+    C -.->|response| I
+    C -.->|response| J
+    C -.->|response| K
+    C -.->|response| L
+
+    %% Artifact persistence per step
+    D -->|response artifact| M
+    E -->|response artifact| M
+    F -->|response artifact| M
+    G -->|response artifact| M
+    H -->|response artifact| M
+    I -->|response artifact| M
+    J -->|response artifact| M
+    K -->|response artifact| M
+    L -->|response artifact| M
+
+    %% Bot delivers artifacts to user
+    M -->|send file / message with Step's response artifact| B
+
 ```
 
 1.  **Telegram Bot**: The main interface for user interaction. The bot accepts requirement files, manages the pipeline's execution, and provides artifacts.
