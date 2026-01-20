@@ -1,6 +1,7 @@
 # ChatOps AI QA Pipeline
 
-This project is an AI-powered QA pipeline managed via a Telegram bot (ChatOps). It automates various stages of the QA process, from analyzing requirements to generating bug reports and summary reports.
+ChatOps AI QA Pipeline is a Telegram-driven, AI-powered QA automation system that transforms requirements into test cases, autotests, QA reports, and bug reports.
+The pipeline orchestrates multiple LLM-based QA stages, persists all artifacts, and supports both cloud and local models in a fully containerized setup.
 
 ## Architecture
 
